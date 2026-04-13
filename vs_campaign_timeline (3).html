@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VS 2026 State Election — Campaign Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #CC2936;
+  --red-dark: #8B0F1A;
+  --red-light: #F5E0E2;
+  --red-mid: #E8939A;
+  --bg: #F7F5F0;
+  --bg-card: #FFFFFF;
+  --text: #1A1A1A;
+  --text-muted: #6B6560;
+  --text-faint: #A09890;
+  --border: rgba(26,26,26,0.12);
+  --border-strong: rgba(26,26,26,0.22);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.site-header {
+  background: var(--text);
+  color: #fff;
+  padding: 0 2rem;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 3px solid var(--red);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-badge {
+  background: var(--red);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  margin-right: 1.5rem;
+}
+.header-title { font-size: 14px; font-weight: 500; padding: 1rem 0; flex: 1; letter-spacing: .01em; }
+.header-title span { font-weight: 300; color: rgba(255,255,255,.5); margin-left: .5rem; }
+.header-countdown {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgba(255,255,255,.6);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: 0 0 0 1.5rem;
+  border-left: 1px solid rgba(255,255,255,.12);
+  margin-left: 1rem;
+}
+.header-countdown strong { color: #fff; font-size: 14px; }
+
+.progress-strip {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: .5rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.pbar-wrap { flex: 1; max-width: 300px; height: 4px; background: var(--border); border-radius: 2px; }
+.pbar { height: 4px; background: var(--red); border-radius: 2px; transition: width .4s; }
+
+.sync-indicator {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+.sync-dot.syncing { background: #BA7517; animation: pulse 1s infinite; }
+.sync-dot.ok { background: #1D9E75; }
+.sync-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.controls {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: .6rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 56px;
+  z-index: 40;
+}
+.view-group { display: flex; }
+.view-btn {
+  padding: .35rem .9rem;
+  font-size: 12px;
+  font-family: var(--mono);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  letter-spacing: .04em;
+}
+.view-btn:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.view-btn:last-child  { border-radius: 0 var(--radius) var(--radius) 0; border-left: none; }
+.view-btn + .view-btn { border-left: none; }
+.view-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+.divider { width: 1px; height: 24px; background: var(--border); margin: 0 .25rem; }
+.cat-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.cat-pill {
+  padding: .28rem .75rem;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  border-radius: 20px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  letter-spacing: .02em;
+}
+.add-btn {
+  margin-left: auto;
+  padding: .4rem 1rem;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .15s;
+}
+.add-btn:hover { background: var(--red-dark); }
+.add-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+.main { padding: 1.5rem 2rem 3rem; max-width: 960px; margin: 0 auto; }
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 3rem 0;
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.week-header {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 1.1rem 0 .4rem;
+  border-top: 1px solid var(--border);
+}
+.week-header:first-child { border-top: none; padding-top: .4rem; }
+
+.event-row {
+  display: grid;
+  grid-template-columns: 82px 16px 1fr auto;
+  gap: 0 10px;
+  align-items: start;
+  cursor: pointer;
+}
+.event-row:hover .ecard { background: #FAFAF8; }
+.edate {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 11px 0 0;
+  text-align: right;
+  line-height: 1.3;
+}
+.edate.fixed { color: var(--text-muted); font-weight: 500; }
+.dot-col { display: flex; flex-direction: column; align-items: center; padding-top: 13px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.vline { width: 1px; background: var(--border); flex: 1; min-height: 6px; }
+.ecard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 11px;
+  background: var(--bg-card);
+  transition: background .1s;
+}
+.ecard.is-fixed { border-left: 3px solid; }
+.ename { font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+.emeta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; font-family: var(--mono); }
+.estatus {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  align-self: start;
+  margin-top: 9px;
+  letter-spacing: .03em;
+}
+
+.expand-wrap {
+  grid-column: 3;
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 10px 12px 12px;
+  margin-bottom: 3px;
+}
+.expand-wrap.open { display: block; }
+.expand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.elabel { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-faint); margin-bottom: 2px; }
+.eval { font-size: 12.5px; }
+.enotes { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px; }
+.tasks-list { list-style: none; }
+.tasks-list li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 3px 0; color: var(--text-muted); }
+.tasks-list input[type=checkbox] { cursor: pointer; width: 13px; height: 13px; flex-shrink: 0; accent-color: var(--red); }
+.tasks-list input:checked + span { text-decoration: line-through; color: var(--text-faint); }
+.expand-actions { display: flex; gap: 10px; margin-top: 10px; }
+.eaction-btn {
+  font-size: 12px;
+  font-family: var(--mono);
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 3px 10px;
+  letter-spacing: .02em;
+}
+.eaction-btn:hover { background: var(--bg); }
+.eaction-btn.danger { color: var(--red); border-color: var(--red-mid); }
+.eaction-btn.danger:hover { background: var(--red-light); }
+
+.month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; padding-bottom: 2rem; }
+.month-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.month-card-title { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; padding: 8px 12px; background: var(--text); color: rgba(255,255,255,.85); }
+.month-event { padding: 5px 12px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; line-height: 1.3; }
+.month-event:last-child { border-bottom: none; }
+.mdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.mdate { font-family: var(--mono); font-size: 10px; color: var(--text-faint); min-width: 30px; }
+
+.phase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; padding-bottom: 2rem; }
+.phase-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.phase-card-title { font-size: 11px; font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); line-height: 1.4; }
+.phase-event { padding: 5px 12px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 7px; }
+.phase-event:last-child { border-bottom: none; }
+
+.empty-state { color: var(--text-faint); font-family: var(--mono); font-size: 12px; padding: 2rem 0; letter-spacing: .04em; }
+
+/* Config banner */
+.config-banner {
+  background: #FDF0D5;
+  border: 1px solid #BA7517;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.config-banner strong { color: #633806; }
+.config-banner code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: rgba(0,0,0,.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.config-input-row { display: flex; gap: 8px; margin-top: 10px; }
+.config-input-row input {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid #BA7517;
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  outline: none;
+}
+.config-input-row input:focus { border-color: var(--text); }
+.config-save-btn {
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-family: var(--font);
+  font-weight: 500;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* Modal */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-strong); padding: 1.5rem; width: min(540px,100%); max-height: 90vh; overflow-y: auto; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+.modal h3 { font-size: 15px; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 20px; color: var(--text-faint); cursor: pointer; padding: 2px 6px; line-height: 1; }
+.modal-close:hover { color: var(--text); }
+.fg { margin-bottom: 12px; }
+.fg label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); display: block; margin-bottom: 5px; }
+.fg input, .fg select, .fg textarea { width: 100%; font-family: var(--font); font-size: 13px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--text); outline: none; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--text); }
+.fg textarea { resize: vertical; min-height: 65px; }
+.fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.task-input-row { display: flex; gap: 6px; margin-top: 5px; }
+.task-input-row input { flex: 1; }
+.task-add-btn { padding: 7px 12px; font-size: 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--text); cursor: pointer; white-space: nowrap; font-family: var(--font); }
+.task-add-btn:hover { background: var(--bg); }
+.task-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.task-chip { display: flex; align-items: center; gap: 5px; font-size: 11.5px; padding: 3px 9px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); color: var(--text-muted); }
+.task-chip button { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--text-faint); line-height: 1; padding: 0; }
+.task-chip button:hover { color: var(--red); }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.btn-cancel { padding: 7px 16px; font-size: 13px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--text-muted); cursor: pointer; font-family: var(--font); }
+.btn-cancel:hover { background: var(--bg); }
+.btn-save { padding: 7px 18px; font-size: 13px; border: none; border-radius: var(--radius); background: var(--red); color: #fff; cursor: pointer; font-weight: 500; font-family: var(--font); }
+.btn-save:hover { background: var(--red-dark); }
+.btn-save:disabled { background: #ccc; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  .main { padding: 1rem; }
+  .controls { padding: .6rem 1rem; top: 50px; }
+  .site-header { padding: 0 1rem; }
+  .header-countdown { display: none; }
+  .fg-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-badge">VS 2026</div>
+  <div class="header-title">State Election Campaign Timeline <span>— internal planning</span></div>
+  <div class="header-countdown">
+    <span>Election day in</span>
+    <strong id="countdown">—</strong>
+    <span>days</span>
+  </div>
+</header>
+
+<div class="progress-strip">
+  <span id="prog-label">—</span>
+  <div class="pbar-wrap"><div class="pbar" id="pbar" style="width:0%"></div></div>
+  <div class="sync-indicator">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">not connected</span>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="view-group">
+    <button class="view-btn active" onclick="setView('week')">WEEK</button>
+    <button class="view-btn" onclick="setView('month')">MONTH</button>
+    <button class="view-btn" onclick="setView('phase')">PHASE</button>
+  </div>
+  <div class="divider"></div>
+  <div class="cat-pills" id="cat-pills"></div>
+  <button class="add-btn" id="add-btn" onclick="openModal()" disabled>+ Add event</button>
+</div>
+
+<main class="main" id="main-content">
+  <div class="loading-state"><div class="spinner"></div><span>Connecting to sheet…</span></div>
+</main>
+
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <div class="modal-header">
+    <h3 id="modal-title">Add event</h3>
+    <button class="modal-close" onclick="closeModal()">×</button>
+  </div>
+  <div class="fg"><label>Event name</label><input id="f-name" type="text" placeholder="e.g. Campaign launch rally"></div>
+  <div class="fg"><label>Date</label><input id="f-date" type="date"></div>
+  <div class="fg-row">
+    <div class="fg"><label>Category</label>
+      <select id="f-cat">
+        <option value="milestone">Campaign milestone</option>
+        <option value="doorknock">Doorknocking</option>
+        <option value="fundraise">Fundraising</option>
+        <option value="announcement">Announcement</option>
+        <option value="media">Media / press</option>
+        <option value="branch">Branch / organiser mtg</option>
+        <option value="electoral">Electoral deadline</option>
+        <option value="letters">Letter delivery</option>
+      </select>
+    </div>
+    <div class="fg"><label>Status</label>
+      <select id="f-status">
+        <option value="confirmed">Confirmed</option>
+        <option value="tentative">Tentative</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>Notes</label><textarea id="f-notes" placeholder="Details, location, goals, links..."></textarea></div>
+  <div class="fg"><label>People responsible</label><input id="f-people" type="text" placeholder="e.g. Roz, campaign team, branch coords"></div>
+  <div class="fg">
+    <label>Tasks</label>
+    <div class="task-input-row">
+      <input id="f-task-input" type="text" placeholder="Add a task and press Enter…" onkeydown="if(event.key==='Enter'){addModalTask();event.preventDefault()}">
+      <button class="task-add-btn" onclick="addModalTask()">Add</button>
+    </div>
+    <div class="task-chips" id="f-task-chips"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    <button class="btn-save" id="btn-save" onclick="saveEvent()">Save event</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ─── CONFIGURATION ──────────────────────────────────────────────────────────
+// Paste your Apps Script Web App URL here after deploying:
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4rv1ZUFDYoWN16rxaBz8hQ6ZFLGJUZmeWiRceEcRI6Q0K3KctGZRNPMtIOU8WSadx/exec';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CATS = {
+  milestone:    { label:'Milestone',     color:'#1D9E75', bg:'#E8F7F2', text:'#085041' },
+  doorknock:    { label:'Doorknocking',  color:'#378ADD', bg:'#E6F1FB', text:'#0C447C' },
+  fundraise:    { label:'Fundraising',   color:'#BA7517', bg:'#FDF0D5', text:'#633806' },
+  announcement: { label:'Announcement',  color:'#7F77DD', bg:'#EEEDFE', text:'#3C3489' },
+  media:        { label:'Media / press', color:'#D4537E', bg:'#FBEAF0', text:'#72243E' },
+  branch:       { label:'Branch mtg',    color:'#888780', bg:'#F1EFE8', text:'#444441' },
+  electoral:    { label:'Electoral',     color:'#CC2936', bg:'#F5E0E2', text:'#8B0F1A' },
+  letters:      { label:'Letters',       color:'#4A8C1C', bg:'#EAF3DE', text:'#27500A' },
+};
+const STATUS = {
+  confirmed: { label:'Confirmed', bg:'#E8F7F2', text:'#085041' },
+  tentative:  { label:'Tentative', bg:'#FDF0D5', text:'#633806' },
+  done:       { label:'Done',      bg:'#F1EFE8', text:'#444441' },
+};
+const PHASES = [
+  { key:'pre',    label:'Pre-campaign (Apr – Jun 2026)',           from:'2026-04-01', to:'2026-06-30' },
+  { key:'buildup',label:'Build-up (Jul – Sep 2026)',              from:'2026-07-01', to:'2026-09-30' },
+  { key:'rampup', label:'Campaign ramp-up (Oct – early Nov 2026)',from:'2026-10-01', to:'2026-11-02' },
+  { key:'period', label:'Election period (writ to polling day)',  from:'2026-11-03', to:'2026-11-27' },
+  { key:'eday',   label:'Election day — 28 Nov 2026',            from:'2026-11-28', to:'2026-11-28' },
+  { key:'post',   label:'Post-election',                         from:'2026-11-29', to:'2027-12-31' },
+];
+
+let events = [];
+let activeCats = new Set(Object.keys(CATS));
+let currentView = 'week';
+let expandedId = null;
+let editingId = null;
+let modalTasks = [];
+const scriptUrl = SCRIPT_URL;
+
+// ── Sync status ──────────────────────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = msg;
+}
+
+// ── API calls ────────────────────────────────────────────────────────────────
+async function api(params) {
+  const url = scriptUrl + '?' + new URLSearchParams(params);
+  const res = await fetch(url, { redirect: 'follow' });
+  const text = await res.text();
+  return JSON.parse(text);
+}
+
+async function loadEvents() {
+  setSyncStatus('syncing', 'loading…');
+  try {
+    const data = await api({ action: 'getAll' });
+    if (data.error) throw new Error(data.error);
+    events = data.events;
+    setSyncStatus('ok', 'synced');
+    document.getElementById('add-btn').disabled = false;
+    render();
+  } catch(e) {
+    setSyncStatus('error', 'connection error');
+    showConfigBanner('Could not reach the sheet. Check your script URL below.');
+  }
+}
+
+async function persistSave(obj) {
+  setSyncStatus('syncing', 'saving…');
+  try {
+    const res = await api({ action: 'save', data: JSON.stringify(obj) });
+    if (res.error) throw new Error(res.error);
+    if (!obj.id && res.id) obj.id = res.id;
+    setSyncStatus('ok', 'saved');
+    return res;
+  } catch(e) {
+    setSyncStatus('error', 'save failed');
+    throw e;
+  }
+}
+
+async function persistDelete(id) {
+  setSyncStatus('syncing', 'deleting…');
+  try {
+    const res = await api({ action: 'delete', id });
+    if (res.error) throw new Error(res.error);
+    setSyncStatus('ok', 'synced');
+  } catch(e) {
+    setSyncStatus('error', 'delete failed');
+    throw e;
+  }
+}
+
+async function persistToggleTask(id, taskIndex, done) {
+  setSyncStatus('syncing', 'saving…');
+  try {
+    await api({ action: 'toggleTask', id, taskIndex, done });
+    setSyncStatus('ok', 'saved');
+  } catch(e) {
+    setSyncStatus('error', 'save failed');
+  }
+}
+
+// ── Config banner ────────────────────────────────────────────────────────────
+function showConfigBanner(msg) {
+  const banner = document.createElement('div');
+  banner.id = 'config-banner';
+  banner.className = 'config-banner';
+  banner.innerHTML = `<strong>Connection error</strong>${msg ? ' — ' + msg : ''}. Please check that the Apps Script is deployed correctly.`;
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  main.prepend(banner);
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+function updateHeader() {
+  const now = new Date();
+  const election = new Date('2026-11-28T00:00:00');
+  const start = new Date('2026-04-13T00:00:00');
+  const days = Math.ceil((election - now) / 86400000);
+  const el = document.getElementById('countdown');
+  if (el) el.textContent = days > 0 ? days : 0;
+  const pct = Math.min(100, Math.max(0, ((now - start) / (election - start)) * 100));
+  const pb = document.getElementById('pbar');
+  if (pb) pb.style.width = pct.toFixed(1) + '%';
+  const pl = document.getElementById('prog-label');
+  if (pl) pl.textContent = Math.round(pct) + '% of campaign window elapsed';
+}
+updateHeader();
+
+// ── Formatting ───────────────────────────────────────────────────────────────
+function fmt(d) {
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short' });
+}
+function fmtFull(d) {
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+}
+function getWeekKey(d) {
+  const dt = new Date(d + 'T00:00:00');
+  const mon = new Date(dt);
+  mon.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+  return mon.toISOString().slice(0, 10);
+}
+function weekLabel(key) {
+  const mon = new Date(key + 'T00:00:00');
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return 'Week of ' + mon.toLocaleDateString('en-AU',{day:'numeric',month:'short'})
+       + ' – ' + sun.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+}
+function getMonth(d) {
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+}
+function getPhaseKey(d) {
+  for (const p of PHASES) if (d >= p.from && d <= p.to) return p.key;
+  return 'post';
+}
+function filtered() {
+  return events.filter(e => activeCats.has(e.cat)).sort((a,b) => a.date.localeCompare(b.date));
+}
+
+// ── Pills ────────────────────────────────────────────────────────────────────
+function renderPills() {
+  document.getElementById('cat-pills').innerHTML = Object.entries(CATS).map(([k,v]) => {
+    const on = activeCats.has(k);
+    return `<button class="cat-pill" onclick="toggleCat('${k}')"
+      style="background:${on?v.bg:'transparent'};color:${on?v.text:'#A09890'};border-color:${on?v.color:'rgba(26,26,26,.12)'}"
+    >${v.label}</button>`;
+  }).join('');
+}
+function toggleCat(k) { activeCats.has(k) ? activeCats.delete(k) : activeCats.add(k); render(); }
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  renderPills();
+  if (currentView === 'week') renderWeek();
+  else if (currentView === 'month') renderMonth();
+  else renderPhase();
+}
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.view-btn').forEach((b,i) => b.classList.toggle('active', ['week','month','phase'][i]===v));
+  render();
+}
+
+function eventCardHTML(e, showLine) {
+  const cat = CATS[e.cat] || CATS.milestone;
+  const st = STATUS[e.status] || STATUS.confirmed;
+  const done = (e.tasks||[]).filter(t=>t.done).length;
+  const total = (e.tasks||[]).length;
+  const taskStr = total > 0 ? ` · ${done}/${total} tasks` : '';
+  const isOpen = expandedId === e.id;
+  return `
+<div class="event-row" onclick="toggleExpand(${e.id})">
+  <div class="edate${e.fixed?' fixed':''}"> ${fmt(e.date)}</div>
+  <div class="dot-col">
+    <div class="dot" style="background:${cat.color}"></div>
+    ${showLine ? '<div class="vline"></div>' : ''}
+  </div>
+  <div class="ecard${e.fixed?' is-fixed':''}" style="${e.fixed?'border-left-color:'+cat.color:''}">
+    <div class="ename">${e.name}</div>
+    <div class="emeta">${cat.label}${e.people?' · '+e.people:''}${taskStr}</div>
+  </div>
+  <div class="estatus" style="background:${st.bg};color:${st.text}">${st.label}</div>
+</div>
+<div class="expand-wrap${isOpen?' open':''}" id="exp-${e.id}">
+  <div class="expand-grid">
+    <div><div class="elabel">Date</div><div class="eval">${fmtFull(e.date)}</div></div>
+    <div><div class="elabel">People responsible</div><div class="eval">${e.people||'—'}</div></div>
+  </div>
+  ${e.notes?`<div class="elabel" style="margin-bottom:3px">Notes</div><div class="enotes">${e.notes}</div>`:''}
+  ${total>0?`<div class="elabel" style="margin-bottom:4px">Tasks</div>
+  <ul class="tasks-list">${(e.tasks||[]).map((t,i)=>`<li><input type="checkbox" ${t.done?'checked':''} onclick="toggleTask(${e.id},${i},${!t.done},event)"><span>${t.text}</span></li>`).join('')}</ul>`:''}
+  <div class="expand-actions">
+    <button class="eaction-btn" onclick="openModal(${e.id},event)">Edit</button>
+    ${!e.fixed?`<button class="eaction-btn danger" onclick="deleteEvent(${e.id},event)">Delete</button>`:''}
+  </div>
+</div>`;
+}
+
+function renderWeek() {
+  const evts = filtered();
+  const groups = {};
+  evts.forEach(e => { const k=getWeekKey(e.date); if(!groups[k]) groups[k]=[]; groups[k].push(e); });
+  const keys = Object.keys(groups).sort();
+  let html = '';
+  keys.forEach(k => {
+    html += `<div class="week-header">${weekLabel(k)}</div>`;
+    groups[k].forEach((e,i) => { html += eventCardHTML(e, i<groups[k].length-1); });
+  });
+  if (!html) html = '<div class="empty-state">No events match the current filters.</div>';
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function renderMonth() {
+  const evts = filtered();
+  const groups = {};
+  evts.forEach(e => { const k=getMonth(e.date); if(!groups[k]) groups[k]=[]; groups[k].push(e); });
+  const keys = Object.keys(groups);
+  if (!keys.length) { document.getElementById('main-content').innerHTML = '<div class="empty-state">No events match the current filters.</div>'; return; }
+  let html = '<div class="month-grid">';
+  keys.forEach(k => {
+    html += `<div class="month-card"><div class="month-card-title">${k}</div>`;
+    groups[k].forEach(e => {
+      const cat = CATS[e.cat]||CATS.milestone;
+      html += `<div class="month-event"><div class="mdot" style="background:${cat.color}"></div><span class="mdate">${fmt(e.date)}</span>${e.name}</div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('main-content').innerHTML = html + '</div>';
+}
+
+function renderPhase() {
+  const evts = filtered();
+  const groups = {};
+  evts.forEach(e => { const k=getPhaseKey(e.date); if(!groups[k]) groups[k]=[]; groups[k].push(e); });
+  if (!Object.keys(groups).length) { document.getElementById('main-content').innerHTML = '<div class="empty-state">No events match the current filters.</div>'; return; }
+  let html = '<div class="phase-grid">';
+  PHASES.forEach(p => {
+    if (!groups[p.key]) return;
+    html += `<div class="phase-card"><div class="phase-card-title">${p.label}</div>`;
+    groups[p.key].forEach(e => {
+      const cat = CATS[e.cat]||CATS.milestone;
+      html += `<div class="phase-event"><div class="mdot" style="background:${cat.color}"></div>${e.name}</div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('main-content').innerHTML = html + '</div>';
+}
+
+// ── Interactions ─────────────────────────────────────────────────────────────
+function toggleExpand(id) { expandedId = expandedId===id ? null : id; render(); }
+
+async function toggleTask(eid, ti, newDone, e) {
+  e.stopPropagation();
+  const ev = events.find(x => x.id == eid);
+  if (!ev) return;
+  ev.tasks[ti].done = newDone;
+  render();
+  await persistToggleTask(eid, ti, newDone);
+}
+
+async function deleteEvent(id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this event?')) return;
+  events = events.filter(x => x.id != id);
+  if (expandedId == id) expandedId = null;
+  render();
+  await persistDelete(id);
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openModal(id, e) {
+  if (e) e.stopPropagation();
+  editingId = id || null;
+  modalTasks = [];
+  if (id) {
+    const ev = events.find(x => x.id == id);
+    document.getElementById('modal-title').textContent = 'Edit event';
+    document.getElementById('f-name').value = ev.name;
+    document.getElementById('f-date').value = ev.date;
+    document.getElementById('f-cat').value = ev.cat;
+    document.getElementById('f-status').value = ev.status;
+    document.getElementById('f-notes').value = ev.notes || '';
+    document.getElementById('f-people').value = ev.people || '';
+    modalTasks = (ev.tasks||[]).map(t=>({...t}));
+  } else {
+    document.getElementById('modal-title').textContent = 'Add event';
+    ['f-name','f-notes','f-people'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-date').value = '';
+    document.getElementById('f-cat').value = 'milestone';
+    document.getElementById('f-status').value = 'confirmed';
+  }
+  renderChips();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('f-name').focus(), 50);
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function addModalTask() {
+  const inp = document.getElementById('f-task-input');
+  if (!inp.value.trim()) return;
+  modalTasks.push({ text: inp.value.trim(), done: false });
+  inp.value = ''; renderChips();
+}
+function removeChip(i) { modalTasks.splice(i,1); renderChips(); }
+function renderChips() {
+  document.getElementById('f-task-chips').innerHTML = modalTasks.map((t,i) =>
+    `<div class="task-chip">${t.text}<button onclick="removeChip(${i})">×</button></div>`
+  ).join('');
+}
+
+async function saveEvent() {
+  const name = document.getElementById('f-name').value.trim();
+  const date = document.getElementById('f-date').value;
+  if (!name || !date) { alert('Please fill in at least a name and date.'); return; }
+  const saveBtn = document.getElementById('btn-save');
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+  const obj = {
+    name, date,
+    cat: document.getElementById('f-cat').value,
+    status: document.getElementById('f-status').value,
+    notes: document.getElementById('f-notes').value.trim(),
+    people: document.getElementById('f-people').value.trim(),
+    tasks: modalTasks.map(t=>({...t})),
+    fixed: false,
+  };
+  if (editingId) {
+    obj.id = editingId;
+    const idx = events.findIndex(x => x.id == editingId);
+    if (idx !== -1) events[idx] = { ...events[idx], ...obj };
+  } else {
+    // Optimistic local id
+    obj.id = '_new_' + Date.now();
+    events.push(obj);
+  }
+  closeModal(); render();
+  try {
+    const res = await persistSave(obj);
+    if (res.id && obj.id !== res.id) {
+      const idx = events.findIndex(x => x.id == obj.id);
+      if (idx !== -1) events[idx].id = res.id;
+    }
+  } catch(e) {
+    alert('Save failed. Your change is shown locally but may not have persisted. Please reload.');
+  }
+  saveBtn.disabled = false; saveBtn.textContent = 'Save event';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'n' && !document.getElementById('modal').classList.contains('open') && document.activeElement.tagName !== 'INPUT') openModal();
+});
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+loadEvents();
+</script>
+</body>
+</html>
